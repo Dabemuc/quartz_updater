@@ -10,6 +10,7 @@ import {
   getPermittedChanges,
   getUpdateSession,
   applyUpdate,
+  deleteUpdateSession,
 } from "./storage";
 
 const BATCH_SIZE: number = parseInt(process.env.BATCH_SIZE || "3"); // Limit for number of changes per session
@@ -21,7 +22,7 @@ export default async function routes(fastify: FastifyInstance) {
     Reply: requestUpdateResponseBody;
   }>("/request-update", async (request, reply) => {
     const { manifest } = request.body;
-    fastify.log.info('Received request to compare client manifest with server files.');
+    fastify.log.info('Received request-update.');
 
     try {
       // Determine which changes are needed based on the client's manifest
@@ -38,7 +39,7 @@ export default async function routes(fastify: FastifyInstance) {
       for (let i = 0; i < permittedChanges.length; i += BATCH_SIZE) {
         const batch = permittedChanges.slice(i, i + BATCH_SIZE);
         const session = createUpdateSession(batch);
-        updateSessions.push(session);
+        updateSessions.push({id: session.id, permittedChanges: session.permittedChanges});
         fastify.log.info(`Created update session with ID: ${session.id} containing ${batch.length} changes.`);
       }
 
@@ -89,6 +90,7 @@ export default async function routes(fastify: FastifyInstance) {
     ) as updateBatchResponseBody;
 
     fastify.log.info(`Completed applying updates for session ${id}.`);
+    deleteUpdateSession(id);
     return reply.status(200).send(results);
   });
 }

@@ -7,6 +7,7 @@ export type Manifest = {
 export type updateSession = {
   id: string;
   permittedChanges: PermittedChange[];
+  timeout?: ReturnType<typeof setTimeout>;
 };
 
 export type PermittedChange = {

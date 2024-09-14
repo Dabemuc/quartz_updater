@@ -6,6 +6,9 @@ import { updateSession, Manifest, Update, PermittedChange } from './types';
 // Directory where the Markdown files are stored
 const CONTENT_DIR = path.join(__dirname, '../content');
 
+// Timeout for update sessions in milliseconds
+const UPDATE_SESSION_TIMEOUT = parseInt(process.env.UPDATE_SESSION_TIMEOUT || '60000');
+
 // In-memory storage for the manifest and update sessions
 let manifestCache: Manifest = []; // Stores the current manifest of all files
 const sessionStorage: Map<string, updateSession> = new Map(); // Stores update sessions by session ID
@@ -87,7 +90,11 @@ export const getPermittedChanges = async (clientManifest: Manifest): Promise<Per
 // Create and store update sessions
 export const createUpdateSession = (permittedChanges: PermittedChange[]): updateSession => {
   const sessionId = generateSessionId();
-  const session: updateSession = { id: sessionId, permittedChanges };
+  const timeout= setTimeout(() => {
+    console.log(`Update session timed out: ${sessionId}`);
+    sessionStorage.delete(sessionId);
+  }, UPDATE_SESSION_TIMEOUT);
+  const session: updateSession = { id: sessionId, permittedChanges, timeout};
   sessionStorage.set(sessionId, session);
   console.log(`Created update session: ${sessionId} with changes:`, permittedChanges);
   return session;
@@ -105,8 +112,20 @@ export const getUpdateSession = (id: string): updateSession | undefined => {
   return session;
 };
 
+// Delete update session by ID
+export const deleteUpdateSession = (id: string): void => {
+  console.log(`Deleting update session: ${id}`);
+  const session = sessionStorage.get(id);
+  if (session) {
+    clearTimeout(session.timeout);
+    sessionStorage.delete(id);
+    console.log(`Update session deleted: ${id}`);
+  } else {
+    console.warn(`Update session not found for deletion: ${id}`);
+  }
+};
+
 // Perform the actual file update and update the manifest cache accordingly
-// TODO: delete session after apply or timeout
 export const applyUpdate = async (
   update: Update
 ): Promise<{ path: string; status: 'success' | 'failure' }> => {

@@ -1,0 +1,22 @@
+curl -X POST http://localhost:3000/request-update \
+  -H "Content-Type: application/json" \
+  -d '{
+    "manifest": [
+      {
+        "path": "example1.md",
+        "hash": "123abc456def"
+      },
+      {
+        "path": "example2.md",
+        "hash": "789ghi012jkl"
+      },
+      {
+        "path": "test.md",
+        "hash": "789ghi012jkl"
+      },
+      {
+        "path": "test2.md",
+        "hash": "789ghi012jkl"
+      }
+    ]
+  }'
