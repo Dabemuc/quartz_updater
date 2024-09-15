@@ -11,9 +11,10 @@ import {
   getUpdateSession,
   applyUpdate,
   deleteUpdateSession,
+  getAllUpdateSessions,
 } from "./storage";
 
-const BATCH_SIZE: number = parseInt(process.env.BATCH_SIZE || "3"); // Limit for number of changes per session
+const BATCH_SIZE: number = parseInt(process.env.BATCH_SIZE || "10"); // Limit for number of changes per session
 
 export default async function routes(fastify: FastifyInstance) {
   // Request update - Endpoint to compare client manifest with server files
@@ -24,7 +25,7 @@ export default async function routes(fastify: FastifyInstance) {
     console.log("Received request-update.");
 
     // Reject if ongoing update session. Simple way to avoid problems cause no multiple clients expected
-    if (Array.from(sessionStorage.values()).length > 0) {
+    if (getAllUpdateSessions().length > 0) {
       console.warn("Update session in progress, rejecting request.");
       return reply.status(409);
     }

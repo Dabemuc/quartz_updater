@@ -4,6 +4,10 @@ A simple backend to accept and apply file updates for obsidian markdown files ho
 Made to work in tandem with the [quartz_updater_obsidian_plugin](https://github.com/Dabemuc/quartz_updater_obsidian_plugin) <br>
 Warning: This is made for a specific usecase and is missing alot of security etc.
 
+# Environment vars
+- CONTENT_DIR: string (Default "../content")
+- UPDATE_SESSION_TIMEOUT: number (Default 60000)
+- BATCH_SIZE: sumber (Default 10)
 
 # Endpoints and their behavior
 

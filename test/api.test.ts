@@ -1,13 +1,24 @@
+import path from "path";
+
+// Set environment variables
+const CONTENT_DIR = path.join(__dirname, "../content");
+process.env.CONTENT_DIR = CONTENT_DIR;
+process.env.UPDATE_SESSION_TIMEOUT = "60000";
+process.env.BATCH_SIZE = "3";
+
+// Log env vars
+console.log("CONTENT_DIR:", process.env.CONTENT_DIR);
+console.log("UPDATE_SESSION_TIMEOUT:", process.env.UPDATE_SESSION_TIMEOUT);
+console.log("BATCH_SIZE:", process.env.BATCH_SIZE);
+
+
 import Fastify, { FastifyInstance } from "fastify";
 import routes from "../src/routes";
 import { promises as fs } from "fs";
-import path from "path";
 import crypto from "crypto";
 import { Manifest, PermittedChange, requestUpdateRequestBody, Update, updateBatchRequestBody, updateSession } from "../src/types";
 import { initializeManifestCache } from "../src/storage";
 import util from "util";
-
-const CONTENT_DIR = path.join(__dirname, "../content");
 
 const buildFastify = () => {
   const fastify = Fastify();
@@ -22,12 +33,7 @@ describe("Test the api roundtrip", () => {
     fastify = buildFastify();
     await fs.mkdir(CONTENT_DIR, { recursive: true }); // Create the content directory
     await fastify.listen({ port: 0 }); // Listen on an ephemeral port
-
-    // Set environment variables
-    process.env.CONTENT_DIR = CONTENT_DIR;
-    process.env.UPDATE_SESSION_TIMEOUT = "60000";
-    process.env.BATCH_SIZE = "3";
-  });
+});
 
   afterAll(async () => {
     await fs.rm(CONTENT_DIR, { recursive: true }); // Clean up the content directory

@@ -4,7 +4,8 @@ import crypto from 'crypto';
 import { updateSession, Manifest, Update, PermittedChange } from './types';
 
 // Directory where the Markdown files are stored
-const CONTENT_DIR = path.join(__dirname, '../content');
+//const CONTENT_DIR = path.join(__dirname, '../content');
+const CONTENT_DIR = process.env.CONTENT_DIR || path.join(__dirname, '../content');
 
 // Timeout for update sessions in milliseconds
 const UPDATE_SESSION_TIMEOUT = parseInt(process.env.UPDATE_SESSION_TIMEOUT || '60000');
@@ -104,6 +105,11 @@ export const getUpdateSession = (id: string): updateSession | undefined => {
     console.warn(`Update session not found: ${id}`);
   }
   return session;
+};
+
+// Retrieve all update sessions
+export const getAllUpdateSessions = (): updateSession[] => {
+  return Array.from(sessionStorage.values());
 };
 
 // Delete update session by ID
