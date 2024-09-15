@@ -21,4 +21,4 @@ RUN npm run build
 EXPOSE 3000
 
 # Start the Fastify server
-CMD ["node", "dist/server.js"]
+CMD ["npm", "run", "start"]
