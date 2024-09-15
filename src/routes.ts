@@ -21,16 +21,30 @@ export default async function routes(fastify: FastifyInstance) {
     Body: requestUpdateRequestBody;
     Reply: requestUpdateResponseBody;
   }>("/request-update", async (request, reply) => {
+    console.log("Received request-update.");
+
+    // Reject if ongoing update session. Simple way to avoid problems cause no multiple clients expected
+    if (Array.from(sessionStorage.values()).length > 0) {
+      console.warn("Update session in progress, rejecting request.");
+      return reply.status(409);
+    }
+
+    // Extract the client's manifest from the request
     const { manifest } = request.body;
-    fastify.log.info('Received request-update.');
+
+    // Validate the client's manifest
+    if (!manifest) {
+      console.error('Client manifest not provided.');
+      return reply.status(400);
+    }
 
     try {
       // Determine which changes are needed based on the client's manifest
       const permittedChanges = await getPermittedChanges(manifest);
-      fastify.log.info(`Permitted changes identified: ${permittedChanges.length}`);
+      console.info(`Permitted changes identified: ${permittedChanges.length}`);
 
       if (permittedChanges.length === 0) {
-        fastify.log.info('No changes required, sending empty update session list.');
+        console.info('No changes required, sending empty update session list.');
         return reply.status(200).send({ updateSessions: [] });
       }
 
@@ -40,13 +54,13 @@ export default async function routes(fastify: FastifyInstance) {
         const batch = permittedChanges.slice(i, i + BATCH_SIZE);
         const session = createUpdateSession(batch);
         updateSessions.push({id: session.id, permittedChanges: session.permittedChanges});
-        fastify.log.info(`Created update session with ID: ${session.id} containing ${batch.length} changes.`);
+        console.info(`Created update session with ID: ${session.id} containing ${batch.length} changes.`);
       }
 
-      fastify.log.info(`Total update sessions created: ${updateSessions.length}`);
+      console.info(`Total update sessions created: ${updateSessions.length}`);
       return reply.status(200).send({ updateSessions });
     } catch (error) {
-      fastify.log.error(`Error during update request: ${error}`);
+      console.error(`Error during update request: ${error}`);
       return reply.status(500);
     }
   });
@@ -57,12 +71,12 @@ export default async function routes(fastify: FastifyInstance) {
     Reply: updateBatchResponseBody;
   }>("/update-batch", async (request, reply) => {
     const { id, updates } = request.body;
-    fastify.log.info(`Received update batch request for session ID: ${id} with ${updates.length} updates.`);
+    console.info(`Received update batch request for session ID: ${id} with ${updates.length} updates.`);
 
     // Retrieve the session by ID
     const session = getUpdateSession(id);
     if (!session) {
-      fastify.log.warn(`Session not found for ID: ${id}`);
+      console.warn(`Session not found for ID: ${id}`);
       return reply.status(400).send(
         updates.map((update) => ({
           path: update.path,
@@ -70,26 +84,26 @@ export default async function routes(fastify: FastifyInstance) {
         }))
       );
     }
-    fastify.log.info(`Session found: ${id}, applying updates.`);
+    console.info(`Session found: ${id}, applying updates.`);
 
     // Validate updates against permitted changes in the session
     const permittedPaths = new Set(session.permittedChanges.map((change) => change.path));
-    fastify.log.info(`Permitted paths for session ${id}: ${Array.from(permittedPaths).join(', ')}`);
+    console.info(`Permitted paths for session ${id}: ${Array.from(permittedPaths).join(', ')}`);
 
     // Apply updates and collect results
     const results = await Promise.all(
       updates.map(async (update) => {
         if (!permittedPaths.has(update.path)) {
-          fastify.log.warn(`Update path not permitted: ${update.path}`);
+          console.warn(`Update path not permitted: ${update.path}`);
           return { path: update.path, status: "failure" };
         }
         const result = await applyUpdate(update);
-        fastify.log.info(`Applied update on ${update.path}, status: ${result.status}`);
+        console.info(`Applied update on ${update.path}, status: ${result.status}`);
         return result;
       })
     ) as updateBatchResponseBody;
 
-    fastify.log.info(`Completed applying updates for session ${id}.`);
+    console.info(`Completed applying updates for session ${id}.`);
     deleteUpdateSession(id);
     return reply.status(200).send(results);
   });

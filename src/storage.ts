@@ -55,21 +55,16 @@ export const getPermittedChanges = async (clientManifest: Manifest): Promise<Per
   const serverManifestMap = new Map<string, string>(manifestCache.map(file => [file.path, file.hash]));
   const clientManifestMap = new Map<string, string>(clientManifest.map(file => [file.path, file.hash]));
 
-  // Identify updates and deletions
+  // Identify updates, creations and deletions
   for (const [path, clientHash] of clientManifestMap.entries()) {
     const serverHash = serverManifestMap.get(path);
     if (serverHash) {
       // If file exists in server but hashes are different, it's an update
-      console.log("c:", clientHash);
-      console.log("s:", serverHash);
-      console.log(serverHash !== clientHash)
       if (serverHash !== clientHash) {
-        console.log(`File update detected: ${path}`);
         changes.push({ type: 'update', path });
       }
     } else {
       // File does not exist on the server but is present in the client manifest
-      console.log(`File marked for creation: ${path}`);
       changes.push({ type: 'create', path });
     }
   }
@@ -78,7 +73,6 @@ export const getPermittedChanges = async (clientManifest: Manifest): Promise<Per
   for (const [path, serverHash] of serverManifestMap.entries()) {
     if (!clientManifestMap.has(path)) {
       // File exists on the server but is missing in the client manifest
-      console.log(`File marked for deletion: ${path}`);
       changes.push({ type: 'delete', path });
     }
   }
@@ -137,6 +131,7 @@ export const applyUpdate = async (
       case 'create':
       case 'update':
         // Create or update the file
+        await fs.mkdir(path.dirname(filePath), { recursive: true });
         await fs.writeFile(filePath, update.content, 'utf-8');
         const newHash = hashContent(update.content);
         console.log(`File ${update.type}d successfully: ${update.path}, New Hash: ${newHash}`);
@@ -169,6 +164,3 @@ export const applyUpdate = async (
     return { path: update.path, status: 'failure' };
   }
 };
-
-// Initialize manifestCache on file load
-initializeManifestCache();
