@@ -21,7 +21,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post<{
     Body: requestUpdateRequestBody;
     Reply: requestUpdateResponseBody;
-  }>("/request-update", async (request, reply) => {
+  }>("/quartz_updater/request-update", async (request, reply) => {
     console.log("Received request-update.");
 
     // Reject if ongoing update session. Simple way to avoid problems cause no multiple clients expected
@@ -70,7 +70,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post<{
     Body: updateBatchRequestBody;
     Reply: updateBatchResponseBody;
-  }>("/update-batch", async (request, reply) => {
+  }>("/quartz_updater/update-batch", async (request, reply) => {
     const { id, updates } = request.body;
     console.info(`Received update batch request for session ID: ${id} with ${updates.length} updates.`);
 
