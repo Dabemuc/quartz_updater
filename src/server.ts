@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import cors from '@fastify/cors';
 import routes from './routes';
 import { initializeManifestCache } from './storage';
 import { promises as fs } from 'fs';
@@ -10,6 +11,11 @@ const CONTENT_DIR = process.env.CONTENT_DIR || path.join(__dirname, '../content'
 // Create a Fastify instance
 const fastify = Fastify({
   logger: true, // Enables logging for requests
+});
+
+// Register CORS
+fastify.register(cors, {
+  origin: '*',
 });
 
 // Register routes
