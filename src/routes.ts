@@ -134,9 +134,10 @@ export default async function routes(fastify: FastifyInstance) {
       return reply.status(500);
     }
 
-    const result = execSync(
-      `docker compose up --force-recreate -d ${containerName}`
-    );
+    const command = `docker-compose up --force-recreate -d ${containerName}`;
+    console.log(`Running ${command}`);
+
+    const result = execSync(command);
 
     console.log(`Rebuild result: ${result}`);
     if (result.toString().includes("Cannot start service")) {

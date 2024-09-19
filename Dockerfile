@@ -3,7 +3,7 @@
 FROM node:18-alpine
 
 # Install docker
-RUN apk add --no-cache docker-cli
+RUN apk add --no-cache docker-cli docker-compose
 
 # Set the working directory inside the container
 WORKDIR /app
