@@ -9,7 +9,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@fastify/cors": "^10.0.0",
+    "@fastify/cors": "^8.0.0",
     "fastify": "^4.0.0"
   },
   "devDependencies": {
