@@ -19,7 +19,7 @@ const generateSessionId = (): string => `session_${Math.random().toString(36).su
 
 // Helper function to calculate the hash of file content
 const hashContent = (content: string): string =>
-  crypto.createHash('sha256').update(content).digest('hex');
+  crypto.createHash('sha1').update(content).digest('hex');
 
 // Helper function to read a file's content and hash
 const readFileAndHash = async (filePath: string): Promise<{ hash: string; content: string }> => {

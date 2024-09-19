@@ -2,6 +2,9 @@
 # Use the official Node.js image as the base image
 FROM node:18-alpine
 
+# Install docker
+RUN apk add --no-cache docker-cli
+
 # Set the working directory inside the container
 WORKDIR /app
 

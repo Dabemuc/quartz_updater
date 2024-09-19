@@ -13,6 +13,7 @@ import {
   deleteUpdateSession,
   getAllUpdateSessions,
 } from "./storage";
+import { execSync } from "child_process";
 
 const BATCH_SIZE: number = parseInt(process.env.BATCH_SIZE || "10"); // Limit for number of changes per session
 
@@ -35,7 +36,7 @@ export default async function routes(fastify: FastifyInstance) {
 
     // Validate the client's manifest
     if (!manifest) {
-      console.error('Client manifest not provided.');
+      console.error("Client manifest not provided.");
       return reply.status(400);
     }
 
@@ -45,7 +46,7 @@ export default async function routes(fastify: FastifyInstance) {
       console.info(`Permitted changes identified: ${permittedChanges.length}`);
 
       if (permittedChanges.length === 0) {
-        console.info('No changes required, sending empty update session list.');
+        console.info("No changes required, sending empty update session list.");
         return reply.status(200).send({ updateSessions: [] });
       }
 
@@ -54,8 +55,13 @@ export default async function routes(fastify: FastifyInstance) {
       for (let i = 0; i < permittedChanges.length; i += BATCH_SIZE) {
         const batch = permittedChanges.slice(i, i + BATCH_SIZE);
         const session = createUpdateSession(batch);
-        updateSessions.push({id: session.id, permittedChanges: session.permittedChanges});
-        console.info(`Created update session with ID: ${session.id} containing ${batch.length} changes.`);
+        updateSessions.push({
+          id: session.id,
+          permittedChanges: session.permittedChanges,
+        });
+        console.info(
+          `Created update session with ID: ${session.id} containing ${batch.length} changes.`
+        );
       }
 
       console.info(`Total update sessions created: ${updateSessions.length}`);
@@ -72,7 +78,9 @@ export default async function routes(fastify: FastifyInstance) {
     Reply: updateBatchResponseBody;
   }>("/quartz_updater/update-batch", async (request, reply) => {
     const { id, updates } = request.body;
-    console.info(`Received update batch request for session ID: ${id} with ${updates.length} updates.`);
+    console.info(
+      `Received update batch request for session ID: ${id} with ${updates.length} updates.`
+    );
 
     // Retrieve the session by ID
     const session = getUpdateSession(id);
@@ -88,24 +96,53 @@ export default async function routes(fastify: FastifyInstance) {
     console.info(`Session found: ${id}, applying updates.`);
 
     // Validate updates against permitted changes in the session
-    const permittedPaths = new Set(session.permittedChanges.map((change) => change.path));
-    console.info(`Permitted paths for session ${id}: ${Array.from(permittedPaths).join(', ')}`);
+    const permittedPaths = new Set(
+      session.permittedChanges.map((change) => change.path)
+    );
+    console.info(
+      `Permitted paths for session ${id}: ${Array.from(permittedPaths).join(
+        ", "
+      )}`
+    );
 
     // Apply updates and collect results
-    const results = await Promise.all(
+    const results = (await Promise.all(
       updates.map(async (update) => {
         if (!permittedPaths.has(update.path)) {
           console.warn(`Update path not permitted: ${update.path}`);
           return { path: update.path, status: "failure" };
         }
         const result = await applyUpdate(update);
-        console.info(`Applied update on ${update.path}, status: ${result.status}`);
+        console.info(
+          `Applied update on ${update.path}, status: ${result.status}`
+        );
         return result;
       })
-    ) as updateBatchResponseBody;
+    )) as updateBatchResponseBody;
 
     console.info(`Completed applying updates for session ${id}.`);
     deleteUpdateSession(id);
     return reply.status(200).send(results);
+  });
+
+  fastify.post("/quartz_updater/rebuild-quartz", async (request, reply) => {
+    console.log("Received rebuild-quartz request.");
+
+    const containerName = process.env.QUARTZ_CONTAINER_NAME;
+    if (!containerName) {
+      console.error("QUARTZ_CONTAINER_NAME environment variable not set.");
+      return reply.status(500);
+    }
+
+    const result = execSync(
+      `docker compose up --force-recreate -d ${containerName}`
+    );
+
+    console.log(`Rebuild result: ${result}`);
+    if (result.toString().includes("Cannot start service")) {
+      return reply.status(500);
+    } else {
+      return reply.status(200);
+    }
   });
 }
