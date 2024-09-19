@@ -125,7 +125,7 @@ export default async function routes(fastify: FastifyInstance) {
     return reply.status(200).send(results);
   });
 
-  fastify.post("/quartz_updater/rebuild-quartz", async (request, reply) => {
+  fastify.post("/quartz_updater/rebuild-quartz", async (_request, reply) => {
     console.log("Received rebuild-quartz request.");
 
     const containerName = process.env.QUARTZ_CONTAINER_NAME;
@@ -134,7 +134,7 @@ export default async function routes(fastify: FastifyInstance) {
       return reply.status(500);
     }
 
-    const command = `docker-compose up --force-recreate -d ${containerName}`;
+    const command = `docker-compose -f /app/vps-services/docker-compose.yaml up --force-recreate -d ${containerName}`;
     console.log(`Running ${command}`);
 
     const result = execSync(command);
