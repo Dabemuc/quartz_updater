@@ -130,11 +130,11 @@ export default async function routes(fastify: FastifyInstance) {
 
     const serviceName = process.env.QUARTZ_SERIVCE_NAME;
     if (!serviceName) {
-      console.error("QUARTZ_CONTAINER_NAME environment variable not set.");
+      console.error("QUARTZ_SERVICE_NAME environment variable not set.");
       return reply.status(500);
     }
 
-    const command = `docker-compose -f /app/vps-services/docker-compose.yaml up --force-recreate -d ${serviceName}`;
+    const command = `docker-compose -f /app/vps_services/docker-compose.yaml up --force-recreate -d ${serviceName}`;
     console.log(`Running ${command}`);
 
     const result = execSync(command);
