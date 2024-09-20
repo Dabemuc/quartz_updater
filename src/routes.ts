@@ -128,13 +128,13 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post("/quartz_updater/rebuild-quartz", async (_request, reply) => {
     console.log("Received rebuild-quartz request.");
 
-    const containerName = process.env.QUARTZ_CONTAINER_NAME;
-    if (!containerName) {
+    const serviceName = process.env.QUARTZ_SERIVCE_NAME;
+    if (!serviceName) {
       console.error("QUARTZ_CONTAINER_NAME environment variable not set.");
       return reply.status(500);
     }
 
-    const command = `docker-compose -f /app/vps-services/docker-compose.yaml up --force-recreate -d ${containerName}`;
+    const command = `docker-compose -f /app/vps-services/docker-compose.yaml up --force-recreate -d ${serviceName}`;
     console.log(`Running ${command}`);
 
     const result = execSync(command);
