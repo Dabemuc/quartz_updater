@@ -142,34 +142,23 @@ export default async function routes(fastify: FastifyInstance) {
       console.error("Failed to get running services from docker_manager.")
       return reply.status(500)
     }
-
-    // Check if service is running
-    if (!runningServices.includes(serviceName)) {
-      console.error(`Service ${serviceName} is not running.`)
-      return reply.status(500)
-    }
     
     // POST endpoint to rebuild quartz
     try {
       const rebuildReply = await fetch(`http://172.17.0.1:5000/rebuild=service=${serviceName}`, {
         method: "POST",
       });
+      const rebuildReplyJson = await rebuildReply.json();
       if (rebuildReply.status === 200) {
-        const rebuildReplyJson = await rebuildReply.json()
-        if(rebuildReplyJson.message?.includes("Success")) {
-          console.info("Quartz rebuild successful.");
-          return reply.status(200);
-        } else {
-          console.error(`Failed to rebuild quartz: ${rebuildReplyJson.message}`);
-          return reply.status(500);
-        }
+        console.info(`Rebuild request successful: ${rebuildReplyJson}`);
+        return reply.status(200).send(rebuildReplyJson);
       } else {
-        console.error(`Api call not successful: ${rebuildReply.status}`);
-        return reply.status(500);
+        console.error(`Rebuild request failed: ${rebuildReplyJson}`);
+        return reply.status(500).send(rebuildReplyJson);
       }
     } catch (error) {
       console.error(`Error rebuilding quartz: ${error}`);
-      return reply.status(500);
+      return reply.status(500).send(error);
     }
   });
 }
