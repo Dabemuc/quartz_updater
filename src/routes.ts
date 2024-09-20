@@ -134,16 +134,42 @@ export default async function routes(fastify: FastifyInstance) {
       return reply.status(500);
     }
 
-    const command = `docker-compose -f /app/vps_services/docker-compose.yaml up --force-recreate -d ${serviceName}`;
-    console.log(`Running ${command}`);
+    // Get running services from docker_manager systemd service on host
+    const servicesResponse = await fetch("http://172.17.0.1:5000/services")
+    const servicesJson = await servicesResponse.json()
+    const runningServices: string[] | undefined = servicesJson.running_services || undefined
+    if (!runningServices) {
+      console.error("Failed to get running services from docker_manager.")
+      return reply.status(500)
+    }
 
-    const result = execSync(command);
-
-    console.log(`Rebuild result: ${result}`);
-    if (result.toString().includes("Cannot start service")) {
+    // Check if service is running
+    if (!runningServices.includes(serviceName)) {
+      console.error(`Service ${serviceName} is not running.`)
+      return reply.status(500)
+    }
+    
+    // POST endpoint to rebuild quartz
+    try {
+      const rebuildReply = await fetch(`http://172.17.0.1:5000/rebuild=service=${serviceName}`, {
+        method: "POST",
+      });
+      if (rebuildReply.status === 200) {
+        const rebuildReplyJson = await rebuildReply.json()
+        if(rebuildReplyJson.message?.includes("Success")) {
+          console.info("Quartz rebuild successful.");
+          return reply.status(200);
+        } else {
+          console.error(`Failed to rebuild quartz: ${rebuildReplyJson.message}`);
+          return reply.status(500);
+        }
+      } else {
+        console.error(`Api call not successful: ${rebuildReply.status}`);
+        return reply.status(500);
+      }
+    } catch (error) {
+      console.error(`Error rebuilding quartz: ${error}`);
       return reply.status(500);
-    } else {
-      return reply.status(200);
     }
   });
 }
