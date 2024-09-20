@@ -145,7 +145,7 @@ export default async function routes(fastify: FastifyInstance) {
     
     // POST endpoint to rebuild quartz
     try {
-      const rebuildReply = await fetch(`http://172.17.0.1:5000/rebuild=service=${serviceName}`, {
+      const rebuildReply = await fetch(`http://172.17.0.1:5000/rebuild?service=${serviceName}`, {
         method: "POST",
       });
       const rebuildReplyJson = await rebuildReply.json();
